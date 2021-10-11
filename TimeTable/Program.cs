@@ -7,6 +7,7 @@ using Telegram.Bot;
 using Telegram.Bot.Args;
 using System.Reflection;
 using Microsoft.Win32;
+using System.Runtime.InteropServices;
 
 namespace ConsoleApp8
 {
@@ -18,8 +19,33 @@ namespace ConsoleApp8
         public static string name;
         private static TelegramBotClient client;
 
+        const int SW_HIDE = 0;
+        const int SW_SHOW = 5;
+        const int SW_Min = 2;
+        const int SW_Max = 3;
+        const int SW_Norm = 4;
+
+        [DllImport("kernel32.dll")]
+        static extern IntPtr GetConsoleWindow();
+
+        [DllImport("user32.dll")]
+        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        [STAThread]
+
         static void Main(string[] args)
         {
+            var handle = GetConsoleWindow();
+            //скрыть консоль
+            ShowWindow(handle, SW_HIDE);
+            /*//отобразить консоль
+            ShowWindow(handle, SW_SHOW);
+            //свернуть консоль
+            ShowWindow(handle, SW_Min);
+            //развернуть консоль
+            ShowWindow(handle, SW_Max);
+            //нормальный размер консоли
+            ShowWindow(handle, SW_Norm);*/
+
             client = new TelegramBotClient(token);
             client.StartReceiving();
             client.OnMessage += OnMessageHandler;
@@ -91,6 +117,6 @@ namespace ConsoleApp8
                 await client.SendTextMessageAsync(msg.Chat.Id, "Введите дату в формате \"01.01.2000\"");
             }
 
-        }        
+        }
     }
 }

@@ -20,7 +20,6 @@ namespace ConsoleApp8
 
         static void Main(string[] args)
         {
-            SetAutoRunValue(true, Assembly.GetExecutingAssembly().Location);
             client = new TelegramBotClient(token);
             client.StartReceiving();
             client.OnMessage += OnMessageHandler;
@@ -92,32 +91,6 @@ namespace ConsoleApp8
                 await client.SendTextMessageAsync(msg.Chat.Id, "Введите дату в формате \"01.01.2000\"");
             }
 
-        }
-
-        private static bool SetAutoRunValue(bool autorun, string path)
-        {
-            const string name = "HelloApp";
-            string ExePath = path;
-            RegistryKey reg;
-            reg = Registry.CurrentUser.CreateSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run");
-            try
-            {
-                if (autorun)
-                {
-                    reg.SetValue(name, ExePath);
-                }
-                else
-                {
-                    reg.DeleteValue(name);
-                }
-                reg.Flush();
-                reg.Close();
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-            return true;
-        }
+        }        
     }
 }

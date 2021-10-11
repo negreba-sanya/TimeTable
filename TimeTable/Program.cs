@@ -5,9 +5,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Args;
-using System.Reflection;
 using Microsoft.Win32;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using AngleSharp.Html.Parser;
+using AngleSharp.Dom;
+using System.Reflection;
 
 namespace ConsoleApp8
 {
@@ -18,6 +21,7 @@ namespace ConsoleApp8
         public static string save_path;
         public static string name;
         private static TelegramBotClient client;
+        const string name_program = "TimeTable";
 
         const int SW_HIDE = 0;
         const int SW_SHOW = 5;
@@ -30,22 +34,23 @@ namespace ConsoleApp8
 
         [DllImport("user32.dll")]
         static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-        [STAThread]
+        [STAThread]      
+
 
         static void Main(string[] args)
         {
             var handle = GetConsoleWindow();
             //скрыть консоль
             ShowWindow(handle, SW_HIDE);
-            /*//отобразить консоль
-            ShowWindow(handle, SW_SHOW);
+            //отобразить консоль
+            /*ShowWindow(handle, SW_SHOW);
             //свернуть консоль
             ShowWindow(handle, SW_Min);
             //развернуть консоль
             ShowWindow(handle, SW_Max);
             //нормальный размер консоли
             ShowWindow(handle, SW_Norm);*/
-
+            SetAutorunValue(true);
             client = new TelegramBotClient(token);
             client.StartReceiving();
             client.OnMessage += OnMessageHandler;
@@ -114,9 +119,61 @@ namespace ConsoleApp8
             }
             catch
             {
-                await client.SendTextMessageAsync(msg.Chat.Id, "Введите дату в формате \"01.01.2000\"");
+                try
+                {
+                    await client.SendTextMessageAsync(msg.Chat.Id, Teachers(msg.Text));
+                }
+                catch
+                {
+                    await client.SendTextMessageAsync(msg.Chat.Id, "Введите дату в формате \"01.01.2000\" или фамилию преподавателя в формате \"Иванов\"");
+                }
+               
             }
 
+        }
+        public static bool SetAutorunValue(bool autorun)
+        {
+            string ExePath = AppDomain.CurrentDomain.BaseDirectory;
+            
+            RegistryKey reg;
+            reg = Registry.CurrentUser.CreateSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Run\\");
+            try
+            {
+                if (autorun)
+                    reg.SetValue(name_program, ExePath + "TimeTable.exe");
+                else
+                    reg.DeleteValue(name_program);
+
+                reg.Close();
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public static string Teachers(string msg)
+        {
+            string answ = "";
+            List<string[]> hrefTags = new List<string[]>();
+            var client = new WebClient();
+            string html = client.DownloadString("https://www.achtng.ru/staff");
+            var parser = new HtmlParser();
+            var document = parser.ParseDocument(html);
+            foreach (IElement element in document.GetElementsByClassName("staffer-staff-title"))
+            {
+                string[] a = Convert.ToString(element.TextContent).Replace("\t", "").Replace("\n", "").Split(" ");
+                hrefTags.Add(a);
+            }
+            foreach (string[] i in hrefTags)
+            {
+                if (i[0] == msg)
+                {
+                    answ = i[0] + " " + i[1] + " " + i[2];
+                }
+            }
+            return answ;
         }
     }
 }

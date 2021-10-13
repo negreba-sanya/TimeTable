@@ -10,7 +10,6 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using AngleSharp.Html.Parser;
 using AngleSharp.Dom;
-using System.Reflection;
 
 namespace TimeTable
 {
@@ -25,9 +24,6 @@ namespace TimeTable
 
         const int SW_HIDE = 0;
         const int SW_SHOW = 5;
-        const int SW_Min = 2;
-        const int SW_Max = 3;
-        const int SW_Norm = 4;
 
         [DllImport("kernel32.dll")]
         static extern IntPtr GetConsoleWindow();
@@ -43,14 +39,7 @@ namespace TimeTable
             //скрыть консоль
             ShowWindow(handle, SW_HIDE);
             //отобразить консоль
-            /*ShowWindow(handle, SW_SHOW);
-            //свернуть консоль
-            ShowWindow(handle, SW_Min);
-            //развернуть консоль
-            ShowWindow(handle, SW_Max);
-            //нормальный размер консоли
-            ShowWindow(handle, SW_Norm);*/
-            //SetAutorunValue(true);
+            //ShowWindow(handle, SW_SHOW);
             client = new TelegramBotClient(token);
             client.StartReceiving();
             client.OnMessage += OnMessageHandler;
@@ -60,7 +49,7 @@ namespace TimeTable
 
         private static async void OnMessageHandler(object sender, MessageEventArgs e)
         {
-            string answer = "";
+            string answer;
             var msg = e.Message;
             try
             {

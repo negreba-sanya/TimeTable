@@ -12,7 +12,7 @@ using AngleSharp.Html.Parser;
 using AngleSharp.Dom;
 using System.Reflection;
 
-namespace ConsoleApp8
+namespace TimeTable
 {
     class Program
     {
@@ -50,7 +50,7 @@ namespace ConsoleApp8
             ShowWindow(handle, SW_Max);
             //нормальный размер консоли
             ShowWindow(handle, SW_Norm);*/
-            SetAutorunValue(true);
+            //SetAutorunValue(true);
             client = new TelegramBotClient(token);
             client.StartReceiving();
             client.OnMessage += OnMessageHandler;

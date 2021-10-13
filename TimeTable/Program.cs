@@ -1,5 +1,6 @@
 ﻿using iTextSharp.text.pdf.parser;
 using System;
+using System.Windows.Input;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -10,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using AngleSharp.Html.Parser;
 using AngleSharp.Dom;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TimeTable
 {
@@ -21,7 +23,7 @@ namespace TimeTable
         public static string name;
         private static TelegramBotClient client;
         const string name_program = "TimeTable";
-
+        public static string mode = "none";
         const int SW_HIDE = 0;
         const int SW_SHOW = 5;
 
@@ -47,79 +49,356 @@ namespace TimeTable
             client.StopReceiving();
         }
 
+
+        // метод вызываемый при отправке сообщения пользователем
         private static async void OnMessageHandler(object sender, MessageEventArgs e)
         {
             string answer;
             var msg = e.Message;
-            try
+
+            if (msg != null)
             {
-                DateTime date = Convert.ToDateTime(msg.Text);
-                if (msg.Text != null)
-                {
-                    try
+                if (mode == "none")
+                    switch (msg.Text)
                     {
-                        WebClient wc = new WebClient();
-                        url = "https://www.achtng.ru/atng/rasp/" + date.ToString("yyyy_MM") + "/" + date.ToString("yyyy_MM_dd") + ".pdf";
-                        save_path = @"";
-                        name = date.ToString("yyyy_MM_dd") + ".pdf";
-                        wc.DownloadFile(url, save_path + name);
-                        answer = date.ToString("dd MMMM yyyy ") + "\n" + "\n";
-                        try
+                        case "Расписание":
+                            mode = "time";
+                            await client.SendTextMessageAsync(
+                                        chatId: msg.Chat.Id,
+                                        text: "Введите дату в формате \"01.01.2000\"",
+                                        replyMarkup: GetButtons_three()
+                                        );
+                            break;
+                        case "Преподаватели":
+                            mode = "teachers";
+                            await client.SendTextMessageAsync(chatId: msg.Chat.Id,
+                                        text: "Введите фамилию преподавателя в формате \"Иванов\"",
+                                        replyMarkup: GetButtons_two());
+                            break;
+                        default:
+                            mode = "none";
+                            await client.SendTextMessageAsync(chatId: msg.Chat.Id,
+                                        text: "Выберите команду:",
+                                        replyMarkup: GetButtons());
+                            break;
+                    }
+                    else
+                    {
+                        switch (mode)
                         {
-                            iTextSharp.text.pdf.PdfReader reader = new iTextSharp.text.pdf.PdfReader(save_path + name);
-                            StringBuilder stringBuil = new StringBuilder();
-                            for (int i = 1; i <= reader.NumberOfPages; i++)
+                            case "time":
+                            if (msg.Text == "Назад")
                             {
-                                stringBuil.Append(PdfTextExtractor.GetTextFromPage(reader, i));
-                            }
-                            string text_lessons = stringBuil.ToString();
-
-                            Regex regex_1 = new Regex(@"ИСП-19/9(.+\n)+№ ИСП-20/11 Ауд.");
-                            MatchCollection matches = regex_1.Matches(text_lessons);
-
-                            if (matches.Count > 0)
-                            {
-                                foreach (Match match in matches)
-                                {
-                                    answer += match.Value;
-                                }
-
+                                mode = "none";
+                                await client.SendTextMessageAsync(chatId: msg.Chat.Id,
+                                        text: "Выберите команду:",
+                                        replyMarkup: GetButtons());
                             }
                             else
                             {
-                                answer = "Совпадений не найдено";
+                                switch (msg.Text)
+                                {                                    
+                                    case "Сегодня":
+                                        try
+                                        { // формирование ссылки и скачивание файла с дальнейшим распознаванием и парсингом
+                                            WebClient wc = new WebClient();
+                                            url = "https://www.achtng.ru/atng/rasp/" + DateTime.Now.ToString("yyyy_MM") + "/" + DateTime.Now.ToString("yyyy_MM_dd") + ".pdf";
+                                            save_path = @"";
+                                            name = DateTime.Now.ToString("yyyy_MM_dd") + ".pdf";
+                                            wc.DownloadFile(url, save_path + name);
+                                            answer = DateTime.Now.ToString("dd MMMM yyyy ") + "\n" + "\n";
+                                            try
+                                            {
+                                                iTextSharp.text.pdf.PdfReader reader = new iTextSharp.text.pdf.PdfReader(save_path + name);
+                                                StringBuilder stringBuil = new StringBuilder();
+                                                for (int i = 1; i <= reader.NumberOfPages; i++)
+                                                {
+                                                    stringBuil.Append(PdfTextExtractor.GetTextFromPage(reader, i));
+                                                }
+                                                string text_lessons = stringBuil.ToString();
+
+                                                Regex regex_1 = new Regex(@"ИСП-19/9(.+\n)+№ ИСП-20/11 Ауд.");
+                                                MatchCollection matches = regex_1.Matches(text_lessons);
+
+                                                if (matches.Count > 0)
+                                                {
+                                                    foreach (Match match in matches)
+                                                    {
+                                                        answer += match.Value;
+                                                    }
+
+                                                }
+                                                else
+                                                {
+                                                    answer = "Совпадений не найдено";
+                                                }
+
+                                                Regex regex_2 = new Regex(@"№ ИСП-20/11 Ауд.");
+                                                answer = regex_2.Replace(answer, "");
+                                                reader.Close();
+                                                System.IO.File.Delete(name);
+                                            }
+                                            catch
+                                            {
+                                            }
+                                        }
+                                        catch
+                                        { // вызывается при отсутсвии расписания на сайте по сформированной ссылке и вносит текст в переменную answer
+                                            answer = DateTime.Now.ToString("dd MMMM yyyy ") + "\n" + "\n" + "На этот день нет расписания";
+                                        }
+                                        // вывод переменной в чат с пользователем 
+                                        await client.SendTextMessageAsync(chatId: msg.Chat.Id,
+                                            text: answer,
+                                            replyMarkup: GetButtons_three()
+                                            );
+                                        break;
+                                    case "Завтра":
+                                        DateTime date_2 = DateTime.Today.AddDays(+1);
+                                        try
+                                        { // формирование ссылки и скачивание файла с дальнейшим распознаванием и парсингом
+                                            
+                                            WebClient wc = new WebClient();
+                                            url = "https://www.achtng.ru/atng/rasp/" + date_2.ToString("yyyy_MM") + "/" + date_2.ToString("yyyy_MM_dd") + ".pdf";
+                                            save_path = @"";
+                                            name = date_2.ToString("yyyy_MM_dd") + ".pdf";
+                                            wc.DownloadFile(url, save_path + name);
+                                            answer = date_2.ToString("dd MMMM yyyy ") + "\n" + "\n";
+                                            try
+                                            {
+                                                iTextSharp.text.pdf.PdfReader reader = new iTextSharp.text.pdf.PdfReader(save_path + name);
+                                                StringBuilder stringBuil = new StringBuilder();
+                                                for (int i = 1; i <= reader.NumberOfPages; i++)
+                                                {
+                                                    stringBuil.Append(PdfTextExtractor.GetTextFromPage(reader, i));
+                                                }
+                                                string text_lessons = stringBuil.ToString();
+
+                                                Regex regex_1 = new Regex(@"ИСП-19/9(.+\n)+№ ИСП-20/11 Ауд.");
+                                                MatchCollection matches = regex_1.Matches(text_lessons);
+
+                                                if (matches.Count > 0)
+                                                {
+                                                    foreach (Match match in matches)
+                                                    {
+                                                        answer += match.Value;
+                                                    }
+
+                                                }
+                                                else
+                                                {
+                                                    answer = "Совпадений не найдено";
+                                                }
+
+                                                Regex regex_2 = new Regex(@"№ ИСП-20/11 Ауд.");
+                                                answer = regex_2.Replace(answer, "");
+                                                reader.Close();
+                                                System.IO.File.Delete(name);
+                                            }
+                                            catch
+                                            {
+                                            }
+                                        }
+                                        catch
+                                        { // вызывается при отсутсвии расписания на сайте по сформированной ссылке и вносит текст в переменную answer
+                                            answer = date_2.ToString("dd MMMM yyyy ") + "\n" + "\n" + "На этот день нет расписания";
+                                        }
+                                        // вывод переменной в чат с пользователем 
+                                        await client.SendTextMessageAsync(chatId: msg.Chat.Id,
+                                            text: answer,
+                                            replyMarkup: GetButtons_three()
+                                            );
+                                        break;
+                                    case "Послезавтра":
+                                        DateTime date_3 = DateTime.Today.AddDays(+2);
+                                        try
+                                        { // формирование ссылки и скачивание файла с дальнейшим распознаванием и парсингом
+
+                                            WebClient wc = new WebClient();
+                                            url = "https://www.achtng.ru/atng/rasp/" + date_3.ToString("yyyy_MM") + "/" + date_3.ToString("yyyy_MM_dd") + ".pdf";
+                                            save_path = @"";
+                                            name = date_3.ToString("yyyy_MM_dd") + ".pdf";
+                                            wc.DownloadFile(url, save_path + name);
+                                            answer = date_3.ToString("dd MMMM yyyy ") + "\n" + "\n";
+                                            try
+                                            {
+                                                iTextSharp.text.pdf.PdfReader reader = new iTextSharp.text.pdf.PdfReader(save_path + name);
+                                                StringBuilder stringBuil = new StringBuilder();
+                                                for (int i = 1; i <= reader.NumberOfPages; i++)
+                                                {
+                                                    stringBuil.Append(PdfTextExtractor.GetTextFromPage(reader, i));
+                                                }
+                                                string text_lessons = stringBuil.ToString();
+
+                                                Regex regex_1 = new Regex(@"ИСП-19/9(.+\n)+№ ИСП-20/11 Ауд.");
+                                                MatchCollection matches = regex_1.Matches(text_lessons);
+
+                                                if (matches.Count > 0)
+                                                {
+                                                    foreach (Match match in matches)
+                                                    {
+                                                        answer += match.Value;
+                                                    }
+
+                                                }
+                                                else
+                                                {
+                                                    answer = "Совпадений не найдено";
+                                                }
+
+                                                Regex regex_2 = new Regex(@"№ ИСП-20/11 Ауд.");
+                                                answer = regex_2.Replace(answer, "");
+                                                reader.Close();
+                                                System.IO.File.Delete(name);
+                                            }
+                                            catch
+                                            {
+                                            }
+                                        }
+                                        catch
+                                        { // вызывается при отсутсвии расписания на сайте по сформированной ссылке и вносит текст в переменную answer
+                                            answer = date_3.ToString("dd MMMM yyyy ") + "\n" + "\n" + "На этот день нет расписания";
+                                        }
+                                        // вывод переменной в чат с пользователем 
+                                        await client.SendTextMessageAsync(chatId: msg.Chat.Id,
+                                            text: answer,
+                                            replyMarkup: GetButtons_three()
+                                            );
+                                        break;
+                                    default:
+                                        try
+                                        {// попытка преобразовать текст сообщения в дату
+                                            DateTime date_4 = Convert.ToDateTime(msg.Text);
+                                            try
+                                            { // формирование ссылки и скачивание файла с дальнейшим распознаванием и парсингом
+                                                WebClient wc = new WebClient();
+                                                url = "https://www.achtng.ru/atng/rasp/" + date_4.ToString("yyyy_MM") + "/" + date_4.ToString("yyyy_MM_dd") + ".pdf";
+                                                save_path = @"";
+                                                name = date_4.ToString("yyyy_MM_dd") + ".pdf";
+                                                wc.DownloadFile(url, save_path + name);
+                                                answer = date_4.ToString("dd MMMM yyyy ") + "\n" + "\n";
+                                                try
+                                                {
+                                                    iTextSharp.text.pdf.PdfReader reader = new iTextSharp.text.pdf.PdfReader(save_path + name);
+                                                    StringBuilder stringBuil = new StringBuilder();
+                                                    for (int i = 1; i <= reader.NumberOfPages; i++)
+                                                    {
+                                                        stringBuil.Append(PdfTextExtractor.GetTextFromPage(reader, i));
+                                                    }
+                                                    string text_lessons = stringBuil.ToString();
+
+                                                    Regex regex_1 = new Regex(@"ИСП-19/9(.+\n)+№ ИСП-20/11 Ауд.");
+                                                    MatchCollection matches = regex_1.Matches(text_lessons);
+
+                                                    if (matches.Count > 0)
+                                                    {
+                                                        foreach (Match match in matches)
+                                                        {
+                                                            answer += match.Value;
+                                                        }
+
+                                                    }
+                                                    else
+                                                    {
+                                                        answer = "Совпадений не найдено";
+                                                    }
+
+                                                    Regex regex_2 = new Regex(@"№ ИСП-20/11 Ауд.");
+                                                    answer = regex_2.Replace(answer, "");
+                                                    reader.Close();
+                                                    System.IO.File.Delete(name);
+                                                }
+                                                catch
+                                                {
+                                                }
+                                            }
+                                            catch
+                                            { // вызывается при отсутсвии расписания на сайте по сформированной ссылке и вносит текст в переменную answer
+                                                answer = date_4.ToString("dd MMMM yyyy ") + "\n" + "\n" + "На этот день нет расписания";
+                                            }
+                                            // вывод переменной в чат с пользователем 
+                                            await client.SendTextMessageAsync(chatId: msg.Chat.Id,
+                                                text: answer,
+                                                replyMarkup: GetButtons_three()
+                                                );
+
+                                        }
+                                        catch
+                                        {
+                                            await client.SendTextMessageAsync(
+                                                chatId: msg.Chat.Id,
+                                                text: "Введите дату в формате \"01.01.2000\"",
+                                                replyMarkup: GetButtons_two()
+                                                );
+                                        }
+                                        break;
+                                }
+
                             }
-
-                            Regex regex_2 = new Regex(@"№ ИСП-20/11 Ауд.");
-                            answer = regex_2.Replace(answer, "");
-                            reader.Close();
-                            System.IO.File.Delete(name);
-                        }
-                        catch
-                        {
+                                break;
+                            case "teachers":
+                            if (msg.Text == "Назад")
+                            {
+                                mode = "none";
+                                await client.SendTextMessageAsync(chatId: msg.Chat.Id,
+                                        text: "Выберите команду:",
+                                        replyMarkup: GetButtons());
+                            }
+                            else
+                            {
+                                try
+                                {// попытка сравнить текст сообщения с фамилией преподавателя из списка
+                                    await client.SendTextMessageAsync(
+                                        chatId: msg.Chat.Id,
+                                        text: Teachers(msg.Text),
+                                        replyMarkup: GetButtons_two());
+                                }
+                                catch
+                                {// при отрицательном результате предыдущих условий
+                                    await client.SendTextMessageAsync(chatId: msg.Chat.Id,
+                                        text: "Введите фамилию преподавателя в формате \"Иванов\"",
+                                        replyMarkup: GetButtons_two());
+                                }
+                            }
+                                break;
                         }
                     }
-                    catch
-                    {
-                        answer = date.ToString("dd MMMM yyyy ") + "\n" + "\n" + "На этот день нет расписания";
-                    }
-                    await client.SendTextMessageAsync(msg.Chat.Id, answer);
-                }
             }
-            catch
-            {
-                try
-                {
-                    await client.SendTextMessageAsync(msg.Chat.Id, Teachers(msg.Text));
-                }
-                catch
-                {
-                    await client.SendTextMessageAsync(msg.Chat.Id, "Введите дату в формате \"01.01.2000\" или фамилию преподавателя в формате \"Иванов\"");
-                }
-               
-            }
-
         }
+
+        private static IReplyMarkup GetButtons()
+        {
+            return new ReplyKeyboardMarkup
+            {
+                Keyboard = new List<List<KeyboardButton>>
+                {
+                    new List<KeyboardButton> { new KeyboardButton { Text = "Расписание" } },
+                    new List<KeyboardButton> { new KeyboardButton { Text = "Преподаватели" } }
+                }
+            };
+        }
+        private static IReplyMarkup GetButtons_two()
+        {
+            return new ReplyKeyboardMarkup
+            {
+                Keyboard = new List<List<KeyboardButton>>
+                {
+                    new List<KeyboardButton> { new KeyboardButton { Text = "Назад" } }
+                }
+            };
+        }
+        private static IReplyMarkup GetButtons_three()
+        {
+            return new ReplyKeyboardMarkup
+            {
+                Keyboard = new List<List<KeyboardButton>>
+                {
+                    new List<KeyboardButton> { new KeyboardButton { Text = "Сегодня" }, new KeyboardButton { Text = "Завтра" }, new KeyboardButton { Text = "Послезавтра" } },
+                    new List<KeyboardButton> { new KeyboardButton { Text = "Назад" } }
+                }
+            };
+        }
+
+        // метод автозагрузки
         public static bool SetAutorunValue(bool autorun)
         {
             string ExePath = AppDomain.CurrentDomain.BaseDirectory;
@@ -142,6 +421,7 @@ namespace TimeTable
             return true;
         }
 
+        // метод проверки на поля на совпадение с фамилиями преподавателей
         public static string Teachers(string msg)
         {
             string answ = "";

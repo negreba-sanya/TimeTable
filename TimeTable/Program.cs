@@ -39,9 +39,9 @@ namespace TimeTable
         {
             var handle = GetConsoleWindow();
             //скрыть консоль
-            ShowWindow(handle, SW_HIDE);
+            //ShowWindow(handle, SW_HIDE);
             //отобразить консоль
-            //ShowWindow(handle, SW_SHOW);
+            ShowWindow(handle, SW_SHOW);
             client = new TelegramBotClient(token);
             client.StartReceiving();
             client.OnMessage += OnMessageHandler;
@@ -221,6 +221,28 @@ namespace TimeTable
                                             answer = date_3.ToString("dd MMMM yyyy ") + "\n" + "\n";
                                             try
                                             {
+                                                string day = "";
+                                                switch (Convert.ToInt32(date_3.DayOfWeek))
+                                                {
+                                                    case 1:
+                                                        day = "понедельник";
+                                                        break;
+                                                    case 2:
+                                                        day = "вторник";
+                                                        break;
+                                                    case 3:
+                                                        day = "среда";
+                                                        break;
+                                                    case 4:
+                                                        day = "четверг";
+                                                        break;
+                                                    case 5:
+                                                        day = "пятница";
+                                                        break;
+                                                    case 6:
+                                                        day = "суббота";
+                                                        break;
+                                                }
                                                 iTextSharp.text.pdf.PdfReader reader = new iTextSharp.text.pdf.PdfReader(save_path + name);
                                                 StringBuilder stringBuil = new StringBuilder();
                                                 for (int i = 1; i <= reader.NumberOfPages; i++)
@@ -236,7 +258,7 @@ namespace TimeTable
                                                 {
                                                     foreach (Match match in matches)
                                                     {
-                                                        answer += match.Value;
+                                                        answer += match.Value.Replace("\nРасписание создано в 1С:Колледж с помощью обработки 'Мастер создания расписания'(Автор: Денис Буторин http://butorin.org)Расписание на " + date_3.ToString("dd MMMM yyyy") + " (" + day + ")   - продолжение стр.2", ""); ;
                                                     }
 
                                                 }

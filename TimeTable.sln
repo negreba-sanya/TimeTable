@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31402.337
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeTable", "TimeTable\TimeTable.csproj", "{CFFE3325-ACFB-4F55-BE9E-FD6085FE1F48}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeTable", "TimeTable\TimeTable.csproj", "{CFFE3325-ACFB-4F55-BE9E-FD6085FE1F48}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Setup", "Setup\Setup.vdproj", "{1C883B0C-5B69-460F-839A-C7DAE46334A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,8 @@ Global
 		{CFFE3325-ACFB-4F55-BE9E-FD6085FE1F48}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CFFE3325-ACFB-4F55-BE9E-FD6085FE1F48}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CFFE3325-ACFB-4F55-BE9E-FD6085FE1F48}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C883B0C-5B69-460F-839A-C7DAE46334A3}.Debug|Any CPU.ActiveCfg = Debug
+		{1C883B0C-5B69-460F-839A-C7DAE46334A3}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -39,9 +39,8 @@ namespace TimeTable
         {
             var handle = GetConsoleWindow();
             //скрыть консоль
-            //ShowWindow(handle, SW_HIDE);
-            //отобразить консоль
-            ShowWindow(handle, SW_SHOW);
+            ShowWindow(handle, SW_HIDE);
+            SetAutorunValue(true);
             client = new TelegramBotClient(token);
             client.StartReceiving();
             client.OnMessage += OnMessageHandler;
@@ -119,12 +118,35 @@ namespace TimeTable
 
                                                 Regex regex_1 = new Regex(@"ИСП-19/9(.+\n)+№ ИСП-20/11 Ауд.");
                                                 MatchCollection matches = regex_1.Matches(text_lessons);
+                                                string day = "";
+                                                switch (Convert.ToInt32(DateTime.Now.DayOfWeek))
+                                                {
+                                                    case 1:
+                                                        day = "понедельник";
+                                                        break;
+                                                    case 2:
+                                                        day = "вторник";
+                                                        break;
+                                                    case 3:
+                                                        day = "среда";
+                                                        break;
+                                                    case 4:
+                                                        day = "четверг";
+                                                        break;
+                                                    case 5:
+                                                        day = "пятница";
+                                                        break;
+                                                    case 6:
+                                                        day = "суббота";
+                                                        break;
+                                                }
+
 
                                                 if (matches.Count > 0)
                                                 {
                                                     foreach (Match match in matches)
                                                     {
-                                                        answer += match.Value;
+                                                        answer += match.Value.Replace("\nРасписание создано в 1С:Колледж с помощью обработки 'Мастер создания расписания'(Автор: Денис Буторин http://butorin.org)Расписание на " + DateTime.Now.ToString("dd MMMM yyyy") + " (" + day + ")   - продолжение стр.2", "");
                                                     }
 
                                                 }
@@ -176,11 +198,34 @@ namespace TimeTable
                                                 Regex regex_1 = new Regex(@"ИСП-19/9(.+\n)+№ ИСП-20/11 Ауд.");
                                                 MatchCollection matches = regex_1.Matches(text_lessons);
 
+                                                string day = "";
+                                                switch (Convert.ToInt32(date_2.DayOfWeek))
+                                                {
+                                                    case 1:
+                                                        day = "понедельник";
+                                                        break;
+                                                    case 2:
+                                                        day = "вторник";
+                                                        break;
+                                                    case 3:
+                                                        day = "среда";
+                                                        break;
+                                                    case 4:
+                                                        day = "четверг";
+                                                        break;
+                                                    case 5:
+                                                        day = "пятница";
+                                                        break;
+                                                    case 6:
+                                                        day = "суббота";
+                                                        break;
+                                                }
+
                                                 if (matches.Count > 0)
                                                 {
                                                     foreach (Match match in matches)
                                                     {
-                                                        answer += match.Value;
+                                                        answer += match.Value.Replace("\nРасписание создано в 1С:Колледж с помощью обработки 'Мастер создания расписания'(Автор: Денис Буторин http://butorin.org)Расписание на " + date_2.ToString("dd MMMM yyyy") + " (" + day + ")   - продолжение стр.2", "");
                                                     }
 
                                                 }
@@ -258,7 +303,7 @@ namespace TimeTable
                                                 {
                                                     foreach (Match match in matches)
                                                     {
-                                                        answer += match.Value.Replace("\nРасписание создано в 1С:Колледж с помощью обработки 'Мастер создания расписания'(Автор: Денис Буторин http://butorin.org)Расписание на " + date_3.ToString("dd MMMM yyyy") + " (" + day + ")   - продолжение стр.2", ""); ;
+                                                        answer += match.Value.Replace("\nРасписание создано в 1С:Колледж с помощью обработки 'Мастер создания расписания'(Автор: Денис Буторин http://butorin.org)Расписание на " + date_3.ToString("dd MMMM yyyy") + " (" + day + ")   - продолжение стр.2", "");
                                                     }
 
                                                 }
@@ -311,11 +356,34 @@ namespace TimeTable
                                                     Regex regex_1 = new Regex(@"ИСП-19/9(.+\n)+№ ИСП-20/11 Ауд.");
                                                     MatchCollection matches = regex_1.Matches(text_lessons);
 
+                                                    string day = "";
+                                                    switch (Convert.ToInt32(date_4.DayOfWeek))
+                                                    {
+                                                        case 1:
+                                                            day = "понедельник";
+                                                            break;
+                                                        case 2:
+                                                            day = "вторник";
+                                                            break;
+                                                        case 3:
+                                                            day = "среда";
+                                                            break;
+                                                        case 4:
+                                                            day = "четверг";
+                                                            break;
+                                                        case 5:
+                                                            day = "пятница";
+                                                            break;
+                                                        case 6:
+                                                            day = "суббота";
+                                                            break;
+                                                    }
+
                                                     if (matches.Count > 0)
                                                     {
                                                         foreach (Match match in matches)
                                                         {
-                                                            answer += match.Value;
+                                                            answer += match.Value.Replace("\nРасписание создано в 1С:Колледж с помощью обработки 'Мастер создания расписания'(Автор: Денис Буторин http://butorin.org)Расписание на " + date_4.ToString("dd MMMM yyyy") + " (" + day + ")   - продолжение стр.2", "");
                                                         }
 
                                                     }
